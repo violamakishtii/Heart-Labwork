@@ -1,205 +1,128 @@
-# Heart Disease Classification — Machine Learning Coursework
+# Heart Disease Prediction — Machine Learning Coursework
 
-A machine learning project that applies four classification algorithms to predict heart disease using the UCI Heart Failure dataset.
+> A machine learning project comparing four classification algorithms to predict the presence of heart disease in patients.
 
 ---
 
-## Dataset — `heart.csv`
+## 📁 Repository Contents
 
-| Property | Value |
+| File | Description |
 |---|---|
-| Rows | 918 |
-| Columns | 12 |
-| Target | `HeartDisease` (0 = No, 1 = Yes) |
-| Source | UCI Heart Failure Prediction Dataset |
+| `heart.csv` | The dataset used for training and testing |
+| `heart_disease_ml.ipynb` | Main Jupyter notebook with all models |
+| `README.md` | Project documentation |
 
-### Features
+---
 
-| Column | Type | Description |
-|---|---|---|
-| `Age` | int | Age of the patient (years) |
-| `Sex` | str | Sex of the patient (M / F) |
-| `ChestPainType` | str | Chest pain type: ATA, NAP, ASY, TA |
-| `RestingBP` | int | Resting blood pressure (mm Hg) |
-| `Cholesterol` | int | Serum cholesterol (mg/dl) |
-| `FastingBS` | int | Fasting blood sugar > 120 mg/dl (1 = Yes, 0 = No) |
-| `RestingECG` | str | Resting ECG results: Normal, ST, LVH |
-| `MaxHR` | int | Maximum heart rate achieved |
-| `ExerciseAngina` | str | Exercise-induced angina (Y / N) |
-| `Oldpeak` | float | ST depression induced by exercise |
-| `ST_Slope` | str | Slope of peak exercise ST segment: Up, Flat, Down |
-| `HeartDisease` | int | Target — 0: No disease, 1: Disease |
+## 📊 Dataset Overview
+
+**Source:** UCI Heart Failure Prediction Dataset  
+**Rows:** 918 patients  
+**Columns:** 12  
+**Target:** `HeartDisease` — 0 (No Disease) / 1 (Disease)
 
 ### Target Distribution
-- **No Heart Disease (0):** 410 patients (44.7%)
-- **Heart Disease (1):** 508 patients (55.3%)
-
----
-
-## Project Structure
-
-```
-Heart-Labwork/
-│
-├── heart.csv                  # Dataset
-├── heart_disease_ml.ipynb     # Main Jupyter notebook
-└── README.md                  # This file
-```
-
----
-
-## Steps Covered (2–8)
-
-| Step | Description |
-|---|---|
-| 2 | Load and explore the dataset, encode categorical features, train/test split |
-| 3 | Decision Tree Classifier — tree plot, feature importances, confusion matrix |
-| 4 | Linear Regression — thresholded at 0.5 for binary classification |
-| 5 | Logistic Regression — confusion matrix, ROC curve, feature coefficients |
-| 6 | Naive Bayes (GaussianNB) — confusion matrix |
-| 7 | ROC curves for all models on one plot |
-| 8 | Summary table and bar chart comparing all models |
-
----
-
-## How to Run
-
-### In JupyterLite / Pyodide (browser-based)
-
-Paste and run this single cell — it installs all dependencies and loads the data automatically:
-
-```python
-import micropip
-await micropip.install(['seaborn', 'scikit-learn'])
-
-import pandas as pd, numpy as np, matplotlib.pyplot as plt, seaborn as sns, warnings
-warnings.filterwarnings('ignore')
-
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
-from sklearn.tree import DecisionTreeClassifier, plot_tree
-from sklearn.linear_model import LinearRegression, LogisticRegression
-from sklearn.naive_bayes import GaussianNB
-from sklearn.metrics import (accuracy_score, confusion_matrix, roc_curve,
-                              roc_auc_score, f1_score, precision_score, recall_score)
-
-from pyodide.http import pyfetch
-response = await pyfetch("https://raw.githubusercontent.com/violamakishtii/Heart-Labwork/main/heart.csv")
-with open("heart.csv", "wb") as f:
-    f.write(await response.bytes())
-
-df = pd.read_csv('heart.csv')
-display(df.head())
-print('Shape:', df.shape)
-
-df_encoded = pd.get_dummies(df, columns=['Sex','ChestPainType','RestingECG','ExerciseAngina','ST_Slope'], drop_first=True)
-X = df_encoded.drop('HeartDisease', axis=1)
-y = df_encoded['HeartDisease']
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
-
-scaler = StandardScaler()
-X_train_s = scaler.fit_transform(X_train)
-X_test_s  = scaler.transform(X_test)
-
-dt = DecisionTreeClassifier(max_depth=4, random_state=42)
-dt.fit(X_train, y_train)
-y_pred_dt = dt.predict(X_test)
-print("Decision Tree Accuracy:", accuracy_score(y_test, y_pred_dt))
-
-plt.figure(figsize=(24,8))
-plot_tree(dt, feature_names=X.columns.tolist(), class_names=['No','Yes'], filled=True, rounded=True, fontsize=8)
-plt.title('Decision Tree'); plt.show()
-
-sns.heatmap(confusion_matrix(y_test, y_pred_dt), annot=True, fmt='d', cmap='Blues')
-plt.title('Confusion Matrix - Decision Tree'); plt.show()
-
-lr = LinearRegression()
-lr.fit(X_train_s, y_train)
-y_pred_lr_raw = lr.predict(X_test_s)
-y_pred_lr = (y_pred_lr_raw >= 0.5).astype(int)
-print("Linear Regression Accuracy:", accuracy_score(y_test, y_pred_lr))
-
-sns.heatmap(confusion_matrix(y_test, y_pred_lr), annot=True, fmt='d', cmap='Reds')
-plt.title('Confusion Matrix - Linear Regression'); plt.show()
-
-log = LogisticRegression(max_iter=1000, random_state=42)
-log.fit(X_train_s, y_train)
-y_pred_log = log.predict(X_test_s)
-print("Logistic Regression Accuracy:", accuracy_score(y_test, y_pred_log))
-
-sns.heatmap(confusion_matrix(y_test, y_pred_log), annot=True, fmt='d', cmap='Greens')
-plt.title('Confusion Matrix - Logistic Regression'); plt.show()
-
-nb = GaussianNB()
-nb.fit(X_train_s, y_train)
-y_pred_nb = nb.predict(X_test_s)
-print("Naive Bayes Accuracy:", accuracy_score(y_test, y_pred_nb))
-
-sns.heatmap(confusion_matrix(y_test, y_pred_nb), annot=True, fmt='d', cmap='Oranges')
-plt.title('Confusion Matrix - Naive Bayes'); plt.show()
-
-plt.figure(figsize=(8,6))
-for name, proba, color in [
-    ('Decision Tree',       dt.predict_proba(X_test)[:,1],    'steelblue'),
-    ('Linear Regression',   y_pred_lr_raw,                    'salmon'),
-    ('Logistic Regression', log.predict_proba(X_test_s)[:,1], 'green'),
-    ('Naive Bayes',         nb.predict_proba(X_test_s)[:,1],  'orange'),
-]:
-    fpr, tpr, _ = roc_curve(y_test, proba)
-    plt.plot(fpr, tpr, label=f'{name} (AUC={roc_auc_score(y_test, proba):.3f})', color=color)
-plt.plot([0,1],[0,1],'k--')
-plt.xlabel('FPR'); plt.ylabel('TPR')
-plt.title('ROC Curves'); plt.legend(); plt.show()
-
-results = pd.DataFrame({
-    'Model':     ['Decision Tree', 'Linear Regression', 'Logistic Regression', 'Naive Bayes'],
-    'Accuracy':  [accuracy_score(y_test, p)  for p in [y_pred_dt, y_pred_lr, y_pred_log, y_pred_nb]],
-    'Precision': [precision_score(y_test, p) for p in [y_pred_dt, y_pred_lr, y_pred_log, y_pred_nb]],
-    'Recall':    [recall_score(y_test, p)    for p in [y_pred_dt, y_pred_lr, y_pred_log, y_pred_nb]],
-    'F1':        [f1_score(y_test, p)        for p in [y_pred_dt, y_pred_lr, y_pred_log, y_pred_nb]],
-}).set_index('Model').round(4)
-
-display(results)
-results.plot(kind='bar', figsize=(10,5), colormap='Set2', edgecolor='black', ylim=(0.6,1.0))
-plt.title('Model Comparison'); plt.xticks(rotation=20, ha='right'); plt.tight_layout(); plt.show()
-```
-
-### In Classic Jupyter Notebook / Google Colab
-
-Replace the `pyfetch` block with:
-```python
-df = pd.read_csv('heart.csv')   # place heart.csv in the same folder
-```
-And remove the `await micropip.install(...)` line — libraries are pre-installed.
-
----
-
-## Results Summary
-
-| Model | Accuracy | Notes |
+| Class | Count | Percentage |
 |---|---|---|
-| Decision Tree | ~83.7% | No scaling needed. Interpretable. |
-| Linear Regression | ~89.1% | Not a classifier — output thresholded at 0.5. |
-| Logistic Regression | ~88.6% | Best for probability estimates. |
-| Naive Bayes | ~91.3% | Best overall accuracy on this dataset. |
+| No Heart Disease (0) | 410 | 44.7% |
+| Heart Disease (1) | 508 | 55.3% |
+
+### Feature Descriptions
+
+| Feature | Type | Description |
+|---|---|---|
+| `Age` | Numerical | Age of the patient in years |
+| `Sex` | Categorical | M = Male, F = Female |
+| `ChestPainType` | Categorical | ATA, NAP, ASY, TA |
+| `RestingBP` | Numerical | Resting blood pressure (mm Hg) |
+| `Cholesterol` | Numerical | Serum cholesterol (mg/dl) |
+| `FastingBS` | Binary | Fasting blood sugar > 120 mg/dl (1 = Yes, 0 = No) |
+| `RestingECG` | Categorical | ECG results — Normal, ST, LVH |
+| `MaxHR` | Numerical | Maximum heart rate achieved |
+| `ExerciseAngina` | Categorical | Exercise-induced angina — Y / N |
+| `Oldpeak` | Numerical | ST depression induced by exercise |
+| `ST_Slope` | Categorical | Slope of peak exercise ST segment — Up, Flat, Down |
+| `HeartDisease` | Binary | **Target variable** — 0: No, 1: Yes |
 
 ---
 
-## Push to GitHub
+## ⚙️ Preprocessing
 
-```bash
-git init
-git remote add origin https://github.com/violamakishtii/Heart-Labwork.git
-git add heart.csv heart_disease_ml.ipynb README.md
-git commit -m "Add heart disease ML notebook and README"
-git push -u origin main
-```
+- Categorical columns encoded using **One-Hot Encoding** (`drop_first=True`)
+- Train / Test split: **80% / 20%** with stratification to preserve class balance
+- **StandardScaler** applied for Linear Regression, Logistic Regression, and Naive Bayes
+- Decision Tree does **not** require scaling
 
 ---
 
-## Notes
+## 🤖 Models & Steps
 
-- All categorical columns are one-hot encoded with `drop_first=True`
-- Train/test split: **80% / 20%** with `stratify=y` to preserve class balance
-- Scaling with `StandardScaler` is applied only for Linear Regression, Logistic Regression, and Naive Bayes — Decision Trees do not require it
-- `random_state=42` is used throughout for reproducibility
+### Step 2 — Load & Prepare Data
+Load `heart.csv`, explore shape and missing values, encode categorical features, and split into train/test sets.
+
+### Step 3 — Decision Tree
+- Trained with `max_depth=4`
+- Visualised using `plot_tree()`
+- No scaling required
+- Outputs: tree diagram, feature importances, confusion matrix
+
+### Step 4 — Linear Regression
+- Not a native classifier — continuous output thresholded at **0.5** to produce binary predictions
+- Included as a conceptual baseline
+- Outputs: predicted value distribution, confusion matrix
+
+### Step 5 — Logistic Regression
+- Best suited for binary classification problems
+- Outputs: confusion matrix, ROC curve with AUC, feature coefficients chart
+
+### Step 6 — Naive Bayes
+- Uses `GaussianNB` — assumes feature independence
+- Fast and effective even on smaller datasets
+- Outputs: confusion matrix
+
+### Step 7 — ROC Curves
+All four models plotted together on a single ROC curve chart with AUC scores for comparison.
+
+### Step 8 — Summary & Comparison
+Full comparison table and grouped bar chart across all models.
+
+---
+
+## 📈 Results
+
+| Model | Accuracy | Precision | Recall | F1 Score |
+|---|---|---|---|---|
+| Decision Tree | 83.7% | 85.2% | 87.4% | 86.3% |
+| Linear Regression* | 89.1% | 90.5% | 90.5% | 90.5% |
+| Logistic Regression | 88.6% | 90.3% | 89.8% | 90.0% |
+| Naive Bayes | **91.3%** | **91.9%** | **93.3%** | **92.6%** |
+
+*Linear Regression output thresholded at 0.5 for binary classification
+
+> **Best Model: Naive Bayes** — achieved the highest accuracy (91.3%) and F1 score on this dataset.
+
+---
+
+## 🚀 How to Run
+
+1. Open [JupyterLite](https://jupyter.org/try-jupyter/lab/) in your browser
+2. Upload `heart.csv` and `heart_disease_ml.ipynb`
+3. Open the notebook and run **Kernel → Restart & Run All**
+
+> ⚠️ JupyterLite runs entirely in the browser (Pyodide). The notebook handles package installation and data loading automatically — no setup required.
+
+---
+
+## 🛠️ Libraries Used
+
+- `pandas` — data loading and manipulation
+- `numpy` — numerical operations
+- `matplotlib` & `seaborn` — visualisations
+- `scikit-learn` — machine learning models and metrics
+
+---
+
+## 👩‍💻 Author
+
+**Viola Makishtii**  
+Heart Disease Prediction — Machine Learning Coursework
